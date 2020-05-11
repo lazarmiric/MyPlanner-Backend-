@@ -77,12 +77,14 @@ namespace PlannerServer.Controllers
                 var securityToken = tokenHandler.CreateToken(tokenDescriptor);
                 var token = tokenHandler.WriteToken(securityToken);
                 return Ok(new { token });
+                //return token
+
             }
             else
             {
                 return BadRequest( new {message = "Username or password is incorrect"}) ;
             }
-
+              
         }
     }
 }
