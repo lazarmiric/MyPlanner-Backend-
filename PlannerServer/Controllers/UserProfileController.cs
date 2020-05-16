@@ -13,12 +13,13 @@ namespace PlannerServer.Controllers
     [ApiController]
     public class UserProfileController : ControllerBase
     {
-        private UserManager<User> _userManager;     
-        
-        public UserProfileController(UserManager<User> userManager)
+        private UserManager<User> _userManager;
+        private AppDbContext _context;
+
+        public UserProfileController(UserManager<User> userManager, AppDbContext context)
         {
             _userManager = userManager;
-
+            _context = context;
         }
 
         [HttpGet]
@@ -36,6 +37,37 @@ namespace PlannerServer.Controllers
                 user.UserName
             };
         }
+        [HttpPost]
         
+        [Route("AddTask")]
+        //Post :/api/UserProfile/AddTask
+        public async Task<Object> PostTask(TaskModel tm)
+        {
+            Model.Task t = new Model.Task();
+            t.Comment = tm.Comment;
+            t.Description = tm.Description;
+            t.Title = tm.Title;
+            t.StartDate = DateTime.Now;
+            t.DueDate = t.StartDate.AddDays(tm.Days);
+            t.Comment = "no comment";
+            t.Status = true;
+            User us = new User();
+            us = await _userManager.FindByNameAsync(tm.Username);
+            t.User = new User();
+            t.User = us;
+            
+            try
+            {
+                _context.Add(t);
+                var result = await _context.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+        }
+
     }
 }
