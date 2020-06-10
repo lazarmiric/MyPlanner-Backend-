@@ -12,7 +12,7 @@ namespace PlannerServer.Model
         public String FirstName { get; set; }
         public String LastName { get; set; }
        
-        public List<Task> Tasks { get; set; }
+        public virtual ICollection<Task> Tasks { get; set; }
 
     }
 }

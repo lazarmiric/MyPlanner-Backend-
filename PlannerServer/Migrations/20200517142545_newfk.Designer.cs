@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PlannerServer.Model;
 
 namespace PlannerServer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200517142545_newfk")]
+    partial class newfk
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -237,8 +239,8 @@ namespace PlannerServer.Migrations
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("LeftDays")
-                        .HasColumnType("int");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
@@ -249,12 +251,9 @@ namespace PlannerServer.Migrations
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserID")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("TaskId");
 
-                    b.HasIndex("UserID");
+                    b.HasIndex("Id");
 
                     b.ToTable("Tasks");
                 });
@@ -330,7 +329,7 @@ namespace PlannerServer.Migrations
                 {
                     b.HasOne("PlannerServer.Model.User", "User")
                         .WithMany("Tasks")
-                        .HasForeignKey("UserID");
+                        .HasForeignKey("Id");
                 });
 #pragma warning restore 612, 618
         }
