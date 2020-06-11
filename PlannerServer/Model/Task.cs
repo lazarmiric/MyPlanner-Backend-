@@ -24,5 +24,6 @@ namespace PlannerServer.Model
         public User User { get; set; }
 
         public int LeftDays { get; set; }
+        public String Stats { get; set; }
     }
 }

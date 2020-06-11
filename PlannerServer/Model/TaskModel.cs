@@ -7,6 +7,7 @@ namespace PlannerServer.Model
 {
     public class TaskModel
     {
+        public int TaskID { get; set; }
         
         public string Title { get; set; }
         public string Description { get; set; }

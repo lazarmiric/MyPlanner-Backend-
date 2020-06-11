@@ -51,7 +51,7 @@ namespace PlannerServer.Controllers
             else return Ok(u);
         }
         [HttpPost]
-        
+        [Authorize]
         [Route("AddTask")]
         //Post :/api/UserProfile/AddTask
         public async Task<Object> PostTask(TaskModel tm)
@@ -65,6 +65,7 @@ namespace PlannerServer.Controllers
             t.Comment = "no comment";
             t.LeftDays = tm.Days;
             t.Status = true;
+            t.Stats = "Progress";
             User us = new User();
             us = await _userManager.FindByNameAsync(Session.Instance.ConnectedUser.UserName);
             t.User = new User();
@@ -83,28 +84,29 @@ namespace PlannerServer.Controllers
                 throw;
             }
         }
-
+        
         [HttpGet]
+        [Authorize]
         [Route("GetTask")]
         //Get :/api/UserProfile/GetTask
         public async Task<Object> GetTasks()
         {
             List<Model.Task> tasks = new List<Model.Task>();
-            tasks = _context.Tasks.ToList().Where(task => task.UserID == Session.Instance.ConnectedUser.Id).ToList();
+            tasks = _context.Tasks.ToList().Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Stats != "Yes" && task.Stats != "No").ToList();
 
 
             foreach (Model.Task task in tasks)
             {
-                task.LeftDays = task.DueDate.Day - task.StartDate.Day;
-                if (task.LeftDays <= 0)
+                task.LeftDays = task.DueDate.Day - DateTime.Now.Day;
+                if (task.LeftDays <= 0 && task.Stats != "Yes")
                 {
-                    task.Status = false;
+                    task.Stats = "No";
                     task.LeftDays = 0;
                     var result = _context.Tasks.SingleOrDefault(b => b.TaskId == task.TaskId);
                     if (result != null)
                     {
                         result.LeftDays = 0;
-                        result.Status = false;
+                        result.Stats = "No";
                         _context.SaveChanges();
                     }
                 }
@@ -116,23 +118,23 @@ namespace PlannerServer.Controllers
             return jsonTask;
         }
         [HttpGet]
+        [Authorize]
         [Route("GetFailedTask")]
         //Get :/api/UserProfile/GetTask
         public async Task<Object> GetFailedTasks()
         {
             List<Model.Task> tasks = new List<Model.Task>();
             tasks = _context.Tasks.ToList()
-                .Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Status == false)
+                .Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Stats == "No")
                 .ToList();
 
 
             foreach (Model.Task task in tasks)
             {
-                task.LeftDays = task.DueDate.Day - task.StartDate.Day;
+                task.LeftDays = task.DueDate.Day - DateTime.Now.Day;
                 if (task.LeftDays <= 0)
                 {                   
-                    task.LeftDays = 0;
-                   
+                    task.LeftDays = 0;                   
                 }
 
             }
@@ -142,19 +144,20 @@ namespace PlannerServer.Controllers
             return jsonTask;
         }
         [HttpGet]
+        [Authorize]
         [Route("GetAccTask")]
         //Get :/api/UserProfile/GetTask
         public async Task<Object> GetAccTasks()
         {
             List<Model.Task> tasks = new List<Model.Task>();
             tasks = _context.Tasks.ToList()
-                .Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Status == true)
+                .Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Stats == "Yes")
                 .ToList();
 
 
             foreach (Model.Task task in tasks)
             {
-                task.LeftDays = task.DueDate.Day - task.StartDate.Day;
+                task.LeftDays = task.DueDate.Day - DateTime.Now.Day;
                 if (task.LeftDays <= 0)
                 {                   
                     task.LeftDays = 0;
@@ -165,5 +168,50 @@ namespace PlannerServer.Controllers
             var jsonTask = JsonSerializer.Serialize(tasks);
             return jsonTask;
         }
+
+        [HttpPost]
+        [Authorize]
+        [Route("GetTaskByID")]
+        //Get :/api/UserProfile/GetTask
+        public async Task<Object> GetTasksID(TaskModel tm)
+        {
+            Model.Task task = new Model.Task();
+            task = (Model.Task)_context.Tasks.FirstOrDefault(t => t.TaskId == tm.TaskID);          
+            var jsonTask = JsonSerializer.Serialize(task);
+            return jsonTask;
+        }
+
+        [HttpPost]
+        [Authorize]
+        [Route("FailTask")]
+        //Get :/api/UserProfile/FailTask
+        public async Task<Object> SetFailTask(TaskModel tm)
+        {
+            var result = _context.Tasks.SingleOrDefault(b => b.TaskId == tm.TaskID);
+            if (result != null)
+            {
+                result.LeftDays = 0;
+                result.Stats = "No";
+                _context.SaveChanges();
+            }
+            return Ok();
+        }
+        [HttpPost]
+        [Authorize]
+        [Route("SuccessTask")]
+        //Get :/api/UserProfile/SuccessTask
+        public async Task<Object> SetSuccessTask(TaskModel tm)
+        {
+            var result = _context.Tasks.SingleOrDefault(b => b.TaskId == tm.TaskID);
+            if (result != null)
+            {
+                result.LeftDays = 0;
+                result.Stats = "Yes";
+                _context.SaveChanges();
+            }
+            return Ok();
+        }
+
+
     }
 }
