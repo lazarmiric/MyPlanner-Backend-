@@ -7,6 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.IdentityModel.Tokens.Jwt;
+
 namespace PlannerServer.Controllers
 {
     [Route("api/[controller]")]
@@ -27,9 +31,9 @@ namespace PlannerServer.Controllers
         //GET :/api/UserProfile
         public async Task<Object> GetUserProfile()
         {
-            string userId = User.Claims.First(c => c.Type == "UserID").Value;
-            var user = await _userManager.FindByIdAsync(userId);
-            Session.Instance.ConnectedUser = user;
+            string token = Request.Headers["Authorization"][0].Split(" ")[1];
+            string userId = descript(token);
+            var user = await _userManager.FindByIdAsync(userId);    
 
             return new 
             {
@@ -39,23 +43,15 @@ namespace PlannerServer.Controllers
                 user.UserName
             };
         }
-
-        [HttpPost]
-        [Route("Session")]
-        //POST: /api/UserProfile/Session
-        public async Task<Object> UserInfo(User u)
-        {
-            string userId = u.UserName;
-
-            if (userId != null) return Ok();
-            else return Ok(u);
-        }
+       
         [HttpPost]
         [Authorize]
         [Route("AddTask")]
         //Post :/api/UserProfile/AddTask
         public async Task<Object> PostTask(TaskModel tm)
         {
+            string token = Request.Headers["Authorization"][0].Split(" ")[1];
+            string userId = descript(token);
             Model.Task t = new Model.Task();
             t.Comment = tm.Comment;
             t.Description = tm.Description;
@@ -67,7 +63,7 @@ namespace PlannerServer.Controllers
             t.Status = true;
             t.Stats = "Progress";
             User us = new User();
-            us = await _userManager.FindByNameAsync(Session.Instance.ConnectedUser.UserName);
+            us = await _userManager.FindByIdAsync(userId);
             t.User = new User();
             t.User = us;
             t.UserID = us.Id;
@@ -84,6 +80,14 @@ namespace PlannerServer.Controllers
                 throw;
             }
         }
+
+        public String descript(String token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadToken(token) as JwtSecurityToken;
+            var userId = jwtToken.Claims.First(claim => claim.Type == "UserID").Value;
+            return userId;
+        }
         
         [HttpGet]
         [Authorize]
@@ -91,13 +95,14 @@ namespace PlannerServer.Controllers
         //Get :/api/UserProfile/GetTask
         public async Task<Object> GetTasks()
         {
+            string token = Request.Headers["Authorization"][0].Split(" ")[1];
+            string userID = descript(token);
             List<Model.Task> tasks = new List<Model.Task>();
-            tasks = _context.Tasks.ToList().Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Stats != "Yes" && task.Stats != "No").ToList();
-
-
+            tasks = _context.Tasks.ToList().Where(task => task.UserID == userID && task.Stats != "Yes" && task.Stats != "No").ToList();
+            
             foreach (Model.Task task in tasks)
             {
-                task.LeftDays = task.DueDate.Day - DateTime.Now.Day;
+                task.LeftDays = Convert.ToInt32( (task.DueDate - DateTime.Now).TotalDays);
                 if (task.LeftDays <= 0 && task.Stats != "Yes")
                 {
                     task.Stats = "No";
@@ -123,15 +128,17 @@ namespace PlannerServer.Controllers
         //Get :/api/UserProfile/GetTask
         public async Task<Object> GetFailedTasks()
         {
+            string token = Request.Headers["Authorization"][0].Split(" ")[1];
+            string userID = descript(token);
             List<Model.Task> tasks = new List<Model.Task>();
             tasks = _context.Tasks.ToList()
-                .Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Stats == "No")
+                .Where(task => task.UserID == userID && task.Stats == "No")
                 .ToList();
 
 
             foreach (Model.Task task in tasks)
             {
-                task.LeftDays = task.DueDate.Day - DateTime.Now.Day;
+                task.LeftDays = Convert.ToInt32((task.DueDate - DateTime.Now).TotalDays);
                 if (task.LeftDays <= 0)
                 {                   
                     task.LeftDays = 0;                   
@@ -149,15 +156,17 @@ namespace PlannerServer.Controllers
         //Get :/api/UserProfile/GetTask
         public async Task<Object> GetAccTasks()
         {
+            string token = Request.Headers["Authorization"][0].Split(" ")[1];
+            string userID = descript(token);
             List<Model.Task> tasks = new List<Model.Task>();
             tasks = _context.Tasks.ToList()
-                .Where(task => task.UserID == Session.Instance.ConnectedUser.Id && task.Stats == "Yes")
+                .Where(task => task.UserID == userID && task.Stats == "Yes")
                 .ToList();
 
 
             foreach (Model.Task task in tasks)
             {
-                task.LeftDays = task.DueDate.Day - DateTime.Now.Day;
+                task.LeftDays = Convert.ToInt32((task.DueDate - DateTime.Now).TotalDays);
                 if (task.LeftDays <= 0)
                 {                   
                     task.LeftDays = 0;

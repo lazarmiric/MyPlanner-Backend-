@@ -60,6 +60,7 @@ namespace PlannerServer.Controllers
 
         public async Task<IActionResult> Login(LoginModel lm)
         {
+     
             var user = await _userManager.FindByNameAsync(lm.UserName);
             if(user != null && await _userManager.CheckPasswordAsync(user,lm.Password))
             {

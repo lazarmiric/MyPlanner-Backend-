@@ -34,8 +34,9 @@ namespace PlannerServer
             //dod apset
 
             services.Configure<ApplicationSettings>(Configuration.GetSection("ApplicationSettings"));
-
-            services.AddControllers();
+        
+            services.AddControllers().AddNewtonsoftJson(
+                options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
             services.AddDbContext<AppDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("IdentityConnection")));
 
